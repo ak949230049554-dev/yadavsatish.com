@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yadav Satish - VIP Music Hub</title>
+    
+    <!-- SEO & Thumbnail -->
+    <title>Yadav Satish - VIP Music Hub</title>
+    <meta property="og:image" content="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1384/1384061.png">
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <style>
+        :root { --blood: #ff0000; --bg: #000000; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial Black', sans-serif; }
+        body { background: var(--bg); color: #fff; overflow-x: hidden; }
+
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px 5%; background: #000; border-bottom: 2px solid var(--blood);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .logo { color: var(--blood); font-size: 22px; cursor: pointer; text-shadow: 0 0 10px var(--blood); }
+
+        .search-area { display: flex; width: 65%; gap: 5px; }
+        input { flex: 1; padding: 10px; border-radius: 25px; border: 1px solid var(--blood); background: #111; color: #fff; outline: none; }
+        .btn-s { padding: 10px; background: var(--blood); border: none; color: #fff; border-radius: 25px; cursor: pointer; font-weight: bold; }
+
+        .container { padding: 20px 5%; }
+        
+        /* BACK BUTTON STYLE */
+        .back-btn { 
+            display: none; background: #222; color: var(--blood); border: 1px solid var(--blood); 
+            padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; 
+            margin-bottom: 20px; transition: 0.3s; width: fit-content;
+        }
+        .back-btn:hover { background: var(--blood); color: #fff; }
+
+        #watch-view { display: none; }
+
+        .player-box { background: #000; border: 2px solid var(--blood); border-radius: 15px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 0 20px var(--blood); }
+        .iframe-wrap { position: relative; width: 100%; padding-bottom: 56.25%; background: #000; }
+        .iframe-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
+        .controls { padding: 15px; background: #0a0a0a; text-align: center; }
+        .v-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; }
+        .btn-action { padding: 10px 20px; border: 1px solid var(--blood); background: #000; color: #fff; cursor: pointer; border-radius: 8px; font-weight: bold; margin: 5px; }
+        
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        .card { background: #111; border-radius: 10px; overflow: hidden; cursor: pointer; border: 1px solid #222; transition: 0.3s; }
+        .card:hover { border-color: var(--blood); transform: scale(1.03); }
+        .card img { width: 100%; height: 100px; object-fit: cover; }
+        .card-info { padding: 8px; font-size: 11px; height: 40px; overflow: hidden; color: #eee; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo" onclick="goHome()">YADAV SATISH</div>
+    <div class="search-area">
+        <input type="text" id="srch" placeholder="Gana khojein...">
+        <button class="btn-s" onclick="search()">Khojein</button>
+        <button class="btn-s" id="mic-btn" onclick="startVoice()">🎤</button>
+    </div>
+</header>
+
+<div class="container">
+    <!-- BACK BUTTON (Hamesha Player ya Search ke time dikhega) -->
+    <button id="globalBackBtn" class="back-btn" onclick="goHome()">⬅ PEECHE JAYEIN (BACK)</button>
+
+    <div id="home-view">
+        <h2 id="gridTitle" style="margin-bottom:20px; color:var(--blood)">LATEST HIT SONGS</h2>
+        <div class="video-grid" id="mainGrid"></div>
+    </div>
+
+    <div id="watch-view">
+        <div class="player-box">
+            <div class="iframe-wrap" id="playerParent"><div id="player"></div></div>
+            <div class="controls">
+                <div class="v-title" id="vTitle">Gana Load Ho Raha Hai...</div>
+                <div class="btn-group">
+                    <button class="btn-action" onclick="player.playVideo()">PLAY</button>
+                    <button class="btn-action" onclick="player.pauseVideo()">PAUSE</button>
+                    <button class="btn-action" onclick="next()">NEXT</button>
+                </div>
+            </div>
+        </div>
+        <h3 style="margin-bottom:15px; color:var(--blood)">AAPKE LIYE 50 GAANE</h3>
+        <div class="video-grid" id="sideGrid"></div>
+    </div>
+</div>
+
+<script>
+    const KEY = 'AIzaSyAiy3YkvJAec66NMIr2ulZToesvphZ4UMs'; 
+    let player, currentList = [], isReady = false;
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            playerVars: { 'autoplay': 1, 'controls': 1, 'vq': 'auto' },
+            events: { 
+                'onReady': () => { isReady = true; },
+                'onStateChange': (e) => { if(e.data == YT.PlayerState.ENDED) next(); }
+            }
+        });
+    }
+
+    async function load(q, grid, limit = 50) {
+        const gridDiv = document.getElementById(grid);
+        gridDiv.innerHTML = '<p>Loading...</p>';
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${limit}&q=${encodeURIComponent(q)}&type=video&videoDuration=medium&key=${KEY}`;
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            if(data.items) {
+                currentList = data.items;
+                gridDiv.innerHTML = '';
+                currentList.forEach(i => {
+                    gridDiv.innerHTML += `
+                    <div class="card" onclick="play('${i.id.videoId}','${i.snippet.title.replace(/'/g,"")}')">
+                        <img src="${i.snippet.thumbnails.medium.url}">
+                        <div class="card-info"><b>${i.snippet.title}</b></div>
+                    </div>`;
+                });
+            }
+        } catch(e) { gridDiv.innerHTML = 'Error!'; }
+    }
+
+    function play(id, t) {
+        document.getElementById('home-view').style.display = 'none';
+        document.getElementById('watch-view').style.display = 'block';
+        document.getElementById('globalBackBtn').style.display = 'block'; // Back button dikhao
+        document.getElementById('vTitle').innerText = t;
+        
+        window.scrollTo(0,0);
+        if (isReady && player.loadVideoById) {
+            player.loadVideoById({ videoId: id });
+        } else {
+            document.getElementById('playerParent').innerHTML = `<iframe id="player" src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay; fullscreen"></iframe>`;
+        }
+        load(t + " songs", 'sideGrid', 50);
+    }
+
+    function search() {
+        let q = document.getElementById('srch').value;
+        if(q) { 
+            document.getElementById('gridTitle').innerText = "Results for: " + q;
+            document.getElementById('globalBackBtn').style.display = 'block'; // Back button dikhao
+            load(q, 'mainGrid', 50); 
+            goHome(true); // Sirf view switch ke liye
+        }
+    }
+
+    function startVoice() {
+        const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!Rec) return;
+        const r = new Rec();
+        r.onresult = (e) => { 
+            document.getElementById('srch').value = e.results[0][0].transcript; 
+            search(); 
+        };
+        r.start();
+    }
+
+    function goHome(keepSearch = false) {
+        if(!keepSearch && player && player.stopVideo) player.stopVideo();
+        document.getElementById('watch-view').style.display = 'none';
+        document.getElementById('home-view').style.display = 'block';
+        
+        // Agar normal home par ja rahe hain to button chhupa do
+        if(!keepSearch) {
+            document.getElementById('globalBackBtn').style.display = 'none';
+            document.getElementById('gridTitle').innerText = "LATEST HIT SONGS";
+            load('Bhojpuri New Hits 2026', 'mainGrid', 50);
+        }
+    }
+
+    function next() {
+        if(currentList.length > 0) {
+            let idx = Math.floor(Math.random() * currentList.length);
+            play(currentList[idx].id.videoId, currentList[idx].snippet.title);
+        }
+    }
+
+    window.onload = () => load('Bhojpuri New Hits 2026', 'mainGrid', 50);
+</script>
+</body>
+</html>
