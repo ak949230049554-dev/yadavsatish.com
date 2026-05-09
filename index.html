@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <!-- Google Site Verification (Glitch/Search Console) -->
-    <meta name="google-site-verification" content="CI8r8upGLNqw9n7fDZE_hgsk8RdD3grDMgFq_js9m1Q" />
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Yadav Satish - VIP Music Hub</title>
     
     <meta property="og:image" content="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80">
@@ -26,8 +23,8 @@
         .logo { color: var(--blood); font-size: 22px; cursor: pointer; text-shadow: 0 0 10px var(--blood); }
 
         .search-area { display: flex; width: 65%; gap: 5px; }
-        input { flex: 1; padding: 10px; border-radius: 25px; border: 1px solid var(--blood); background: #111; color: #fff; outline: none; }
-        .btn-s { padding: 10px; background: var(--blood); border: none; color: #fff; border-radius: 25px; cursor: pointer; font-weight: bold; }
+        input { flex: 1; padding: 10px; font-size: 16px; border-radius: 25px; border: 1px solid var(--blood); background: #111; color: #fff; outline: none; }
+        .btn-s { padding: 10px 15px; background: var(--blood); border: none; color: #fff; border-radius: 25px; cursor: pointer; font-weight: bold; }
 
         .container { padding: 20px 5%; }
         
@@ -53,6 +50,13 @@
         .card:hover { border-color: var(--blood); transform: scale(1.03); }
         .card img { width: 100%; height: 100px; object-fit: cover; }
         .card-info { padding: 8px; font-size: 11px; height: 40px; overflow: hidden; color: #eee; }
+
+        /* ANDROID RESPONSIVE DESIGN */
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 10px; padding: 15px 5%; }
+            .search-area { width: 100%; }
+            .logo { font-size: 24px; }
+        }
     </style>
 </head>
 <body>
@@ -86,7 +90,7 @@
                 </div>
             </div>
         </div>
-        <h3 style="margin-bottom:15px; color:var(--blood)">AAPKE LIYE MIX SONGS</h3>
+        <h3 id="mixTitle" style="margin-bottom:15px; color:var(--blood)">YOUTUBE STYLE MIX GAANE</h3>
         <div class="video-grid" id="sideGrid"></div>
     </div>
 </div>
@@ -113,9 +117,9 @@
             const res = await fetch(url);
             const data = await res.json();
             if(data.items) {
-                currentList = data.items;
+                if(grid === 'mainGrid') currentList = data.items;
                 gridDiv.innerHTML = '';
-                currentList.forEach(i => {
+                data.items.forEach(i => {
                     let cleanTitle = i.snippet.title.replace(/'/g, "").replace(/"/g, "");
                     gridDiv.innerHTML += `
                     <div class="card" onclick="play('${i.id.videoId}','${cleanTitle}')">
@@ -140,9 +144,15 @@
             document.getElementById('playerParent').innerHTML = `<iframe id="player" src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay; fullscreen"></iframe>`;
         }
 
-        // मिक्स गानों के लिए जनरल क्वेरी
-        let mixSuggestions = "Bhojpuri New Hits 2026 Mix"; 
-        load(mixSuggestions, 'sideGrid', 50);
+        // --- YOUTUBE ALGORITHM LOGIC (HAR RANG KE GAANE) ---
+        let baseKeyword = t.split(/[|,-]/)[0].trim();
+        let varietyTags = [" trending", " remix", " hits", " lofi", " mashup", " non stop"];
+        let randomTag = varietyTags[Math.floor(Math.random() * varietyTags.length)];
+        
+        // Isse search query "Gana Ka Naam + Random Tag" ban jayegi
+        let mixQuery = baseKeyword + randomTag;
+        document.getElementById('mixTitle').innerText = "MIX: " + mixQuery.toUpperCase();
+        load(mixQuery, 'sideGrid', 30);
     }
 
     function search() {
